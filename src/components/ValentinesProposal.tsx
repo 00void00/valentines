@@ -57,10 +57,24 @@ export default function ValentinesProposal() {
   } | null>(null);
   const [showFireworks, setShowFireworks] = useState(false);
 
+  // Returns a position that avoids the center (sad hamster area). Picks from edges/corners.
   const getRandomPosition = () => {
-    const randomTop = Math.random() * 80;
-    const randomLeft = Math.random() * 80;
-    return { top: `${randomTop}%`, left: `${randomLeft}%` };
+    const hamsterZone = { leftMin: 35, leftMax: 65, topMin: 38, topMax: 62 };
+    const safeZones = [
+      { left: () => Math.random() * 25, top: () => Math.random() * 100 },           // left edge
+      { left: () => 75 + Math.random() * 25, top: () => Math.random() * 100 },     // right edge
+      { left: () => Math.random() * 100, top: () => Math.random() * 25 },          // top edge
+      { left: () => Math.random() * 100, top: () => 75 + Math.random() * 25 },     // bottom edge
+    ];
+    const zone = safeZones[Math.floor(Math.random() * safeZones.length)];
+    let left = zone.left();
+    let top = zone.top();
+    // If somehow in hamster zone, nudge to nearest edge
+    if (left >= hamsterZone.leftMin && left <= hamsterZone.leftMax && top >= hamsterZone.topMin && top <= hamsterZone.topMax) {
+      left = left < 50 ? hamsterZone.leftMin - 15 : hamsterZone.leftMax + 15;
+      top = top < 50 ? hamsterZone.topMin - 15 : hamsterZone.topMax + 15;
+    }
+    return { top: `${Math.max(0, Math.min(90, top))}%`, left: `${Math.max(0, Math.min(90, left))}%` };
   };
 
   useEffect(() => {
@@ -134,7 +148,7 @@ export default function ValentinesProposal() {
             >
               Will you be my Valentine?
             </h2>
-            <div className="relative z-10" style={{ opacity: 1 }}>
+            <div className="relative z-0" style={{ opacity: 1 }}>
               <Image
                 src="/sad_hamster.png"
                 alt="Sad Hamster"
@@ -151,19 +165,23 @@ export default function ValentinesProposal() {
                 Yes, I will! 🥰
               </button>
               <button
-                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl hover:from-gray-600 hover:to-gray-700 transform hover:scale-95 transition-all duration-300 shadow-lg relative z-30"
+                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl hover:from-gray-600 hover:to-gray-700 transform hover:scale-95 transition-all duration-300 shadow-lg relative z-[100] select-none"
                 style={
                   position
                     ? {
-                        position: "absolute",
+                        position: "fixed",
                         top: position.top,
                         left: position.left,
-                        zIndex: 50,
+                        zIndex: 100,
                       }
                     : {}
                 }
                 onMouseEnter={() => setPosition(getRandomPosition())}
-                onClick={() => setPosition(getRandomPosition())}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setPosition(getRandomPosition());
+                }}
               >
                 No, I won&apos;t 😢
               </button>
