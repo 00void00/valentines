@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import PhotoPairGame from "../components/PhotoPairGame";
 import ValentinesProposal from "@/components/ValentinesProposal";
@@ -13,12 +13,13 @@ export default function Home() {
   const [showValentinesProposal, setShowValentinesProposal] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const handleShowProposal = () => {
+  const handleShowProposal = useCallback(() => {
+    console.log('handleShowProposal called');
     setIsTransitioning(true);
     setTimeout(() => {
       setShowValentinesProposal(true);
     }, ANIM_DURATION * 1000);
-  };
+  }, []);
 
   return (
     <OrientationGuard>

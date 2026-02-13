@@ -5,29 +5,29 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 
 // 18 images
-const images = [
-  "/game-photos/1.avif",
-  "/game-photos/2.avif",
-  "/game-photos/3.avif",
-  "/game-photos/4.avif",
-  "/game-photos/5.avif",
-  "/game-photos/6.avif",
-  "/game-photos/7.avif",
-  "/game-photos/8.avif",
-  "/game-photos/9.avif",
-  "/game-photos/10.avif",
-  "/game-photos/11.avif",
-  "/game-photos/12.avif",
-  "/game-photos/13.avif",
-  "/game-photos/14.avif",
-  "/game-photos/15.avif",
-  "/game-photos/16.avif",
-  "/game-photos/17.avif",
-  "/game-photos/18.avif",
+const imageList = [
+  "/game-photos/1.jpeg",
+  "/game-photos/2.jpeg",
+  "/game-photos/3.jpeg",
+  "/game-photos/4.jpeg",
+  "/game-photos/5.jpeg",
+  "/game-photos/6.jpeg",
+  "/game-photos/7.jpeg",
+  "/game-photos/8.jpeg",
+  "/game-photos/9.jpeg",
+  "/game-photos/10.jpeg",
+  "/game-photos/11.jpeg",
+  "/game-photos/12.jpeg",
+  "/game-photos/13.jpeg",
+  "/game-photos/14.jpeg",
+  "/game-photos/15.jpeg",
+  "/game-photos/16.jpeg",
+  "/game-photos/17.jpeg",
+  "/game-photos/18.jpeg",
 ];
 
 // Create 18 pairs of images (36 images in total)
-const imagePairs = images.flatMap((image) => [image, image]);
+const imagePairs = imageList.flatMap((image) => [image, image]);
 
 const shuffleArray = (array: string[]) => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -57,7 +57,15 @@ export default function PhotoPairGame({
   const [selected, setSelected] = useState<number[]>([]);
   const [matched, setMatched] = useState<number[]>([]);
   const [incorrect, setIncorrect] = useState<number[]>([]);
-  const [images] = useState(() => shuffleArray([...imagePairs]));
+  const [images, setImages] = useState<string[]>(imagePairs);
+  const [isMounted, setIsMounted] = useState(false);
+  const [gameCompleted, setGameCompleted] = useState(false);
+
+  // Shuffle images only on client side after mount to avoid hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+    setImages(shuffleArray([...imagePairs]));
+  }, []);
 
   const handleClick = async (index: number) => {
     if (selected.length === 2 || matched.includes(index) || selected.includes(index)) return;
@@ -83,26 +91,38 @@ export default function PhotoPairGame({
 
   // Check if game is won
   useEffect(() => {
-    if (matched.length === imagePairs.length) {
-      handleShowProposal();
+    // All 36 cards (18 pairs × 2) need to be matched
+    const totalCards = imagePairs.length; // Should be 36
+    const uniqueMatched = [...new Set(matched)]; // Remove duplicates if any
+    console.log('Checking game completion - Matched:', matched.length, 'Unique:', uniqueMatched.length, 'Total:', totalCards);
+    
+    if (matched.length === totalCards && matched.length > 0 && !gameCompleted) {
+      console.log('🎉 Game completed! Calling handleShowProposal');
+      setGameCompleted(true);
+      // Small delay to ensure state is fully updated
+      setTimeout(() => {
+        handleShowProposal();
+      }, 100);
     }
-  }, [matched, handleShowProposal]);
+  }, [matched, handleShowProposal, gameCompleted]);
 
   return (
     <div className="grid grid-cols-9 gap-1 lg:gap-2 max-w-[95vw] mx-auto place-items-center">
       {/* Image preload */}
-      <div className="hidden">
-        {images.map((image, i) => (
-          <Image
-            key={i}
-            src={image}
-            alt={`Image ${i + 1}`}
-            fill
-            className="object-cover"
-            priority
-          />
-        ))}
-      </div>
+      {isMounted && (
+        <div className="hidden">
+          {images.map((image, i) => (
+            <Image
+              key={i}
+              src={image}
+              alt={`Image ${i + 1}`}
+              fill
+              className="object-cover"
+              priority
+            />
+          ))}
+        </div>
+      )}
 
       {heartLayout.flat().map((index, i) =>
         index !== null ? (
