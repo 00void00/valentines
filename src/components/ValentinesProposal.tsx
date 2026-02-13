@@ -79,6 +79,21 @@ export default function ValentinesProposal() {
     return { top: `${Math.max(0, Math.min(90, top))}%`, left: `${Math.max(0, Math.min(90, left))}%` };
   };
 
+  // Try to generate a random position that's at least `minDist` px away from the cursor
+  const getRandomPositionAvoidingCursor = (cursorX: number, cursorY: number, buttonRect: DOMRect, minDist = 160) => {
+    for (let i = 0; i < 12; i++) {
+      const pos = getRandomPosition();
+      const leftPct = parseFloat(pos.left);
+      const topPct = parseFloat(pos.top);
+      const centerX = (leftPct / 100) * window.innerWidth + buttonRect.width / 2;
+      const centerY = (topPct / 100) * window.innerHeight + buttonRect.height / 2;
+      const dist = Math.hypot(centerX - cursorX, centerY - cursorY);
+      if (dist > minDist) return pos;
+    }
+    // fallback
+    return getRandomPosition();
+  };
+
   useEffect(() => {
     if (step < 2) {
       // Change step after 5 seconds
@@ -88,19 +103,17 @@ export default function ValentinesProposal() {
 
       return () => clearTimeout(timer);
     }
-    
-    // Initialize button position when step 2 starts
-    if (step === 2 && !position) {
-      setPosition(getRandomPosition());
-    }
-  }, [step, position]);
+
+    // Do NOT set initial random position here: keep the button inline next to the "Yes" button
+    // The runaway behavior is triggered by pointer proximity in the mousemove handler.
+  }, [step]);
 
   // Track mouse movement and move button away when cursor gets near
   useEffect(() => {
-    if (step !== 2 || !position) return;
+    if (step !== 2) return;
 
     let lastMoveTime = 0;
-    const throttleDelay = 100; // Only check every 100ms
+    const throttleDelay = 50; // more responsive
 
     const handleMouseMove = (e: MouseEvent) => {
       const now = Date.now();
@@ -111,26 +124,26 @@ export default function ValentinesProposal() {
 
       if (!noButtonRef.current) return;
 
-      // Get button position
+      // Get button position (works whether inline or fixed)
       const buttonRect = noButtonRef.current.getBoundingClientRect();
       const buttonCenterX = buttonRect.left + buttonRect.width / 2;
       const buttonCenterY = buttonRect.top + buttonRect.height / 2;
 
       // Calculate distance between mouse and button center
-      const distance = Math.sqrt(
-        Math.pow(mousePositionRef.current.x - buttonCenterX, 2) +
-        Math.pow(mousePositionRef.current.y - buttonCenterY, 2)
-      );
+      const distance = Math.hypot(mousePositionRef.current.x - buttonCenterX, mousePositionRef.current.y - buttonCenterY);
 
-      // If cursor is within 120px of button, move it away
-      if (distance < 120) {
-        setPosition(getRandomPosition());
+      const threshold = 160; // px - how close before it runs away
+
+      // If cursor is within threshold, move it away to a safe position
+      if (distance < threshold) {
+        const newPos = getRandomPositionAvoidingCursor(mousePositionRef.current.x, mousePositionRef.current.y, buttonRect, threshold);
+        setPosition(newPos);
       }
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [step, position]);
+  }, [step]);
 
   const handleYesClick = () => {
     setShowFireworks(true);
@@ -210,7 +223,7 @@ export default function ValentinesProposal() {
               </button>
               <button
                 ref={noButtonRef}
-                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl transform transition-all duration-300 shadow-lg relative z-[100] select-none pointer-events-none"
+                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl transform transition-all duration-300 shadow-lg relative z-[100] select-none"
                 style={
                   position
                     ? {
@@ -218,11 +231,12 @@ export default function ValentinesProposal() {
                         top: position.top,
                         left: position.left,
                         zIndex: 100,
-                        pointerEvents: "none",
+                        pointerEvents: "auto",
                         cursor: "not-allowed",
                       }
                     : {
-                        pointerEvents: "none",
+                        // inline (initial) — stays next to the Yes button
+                        pointerEvents: "auto",
                         cursor: "not-allowed",
                       }
                 }
