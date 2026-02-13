@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Playfair_Display } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
 import Fireworks from "@fireworks-js/react";
@@ -56,6 +56,8 @@ export default function ValentinesProposal() {
     left: string;
   } | null>(null);
   const [showFireworks, setShowFireworks] = useState(false);
+  const noButtonRef = useRef<HTMLButtonElement>(null);
+  const mousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Returns a position that avoids the center (sad hamster area). Picks from edges/corners.
   const getRandomPosition = () => {
@@ -86,7 +88,49 @@ export default function ValentinesProposal() {
 
       return () => clearTimeout(timer);
     }
-  }, [step]);
+    
+    // Initialize button position when step 2 starts
+    if (step === 2 && !position) {
+      setPosition(getRandomPosition());
+    }
+  }, [step, position]);
+
+  // Track mouse movement and move button away when cursor gets near
+  useEffect(() => {
+    if (step !== 2 || !position) return;
+
+    let lastMoveTime = 0;
+    const throttleDelay = 100; // Only check every 100ms
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const now = Date.now();
+      if (now - lastMoveTime < throttleDelay) return;
+      lastMoveTime = now;
+
+      mousePositionRef.current = { x: e.clientX, y: e.clientY };
+
+      if (!noButtonRef.current) return;
+
+      // Get button position
+      const buttonRect = noButtonRef.current.getBoundingClientRect();
+      const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+      const buttonCenterY = buttonRect.top + buttonRect.height / 2;
+
+      // Calculate distance between mouse and button center
+      const distance = Math.sqrt(
+        Math.pow(mousePositionRef.current.x - buttonCenterX, 2) +
+        Math.pow(mousePositionRef.current.y - buttonCenterY, 2)
+      );
+
+      // If cursor is within 120px of button, move it away
+      if (distance < 120) {
+        setPosition(getRandomPosition());
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [step, position]);
 
   const handleYesClick = () => {
     setShowFireworks(true);
@@ -117,7 +161,7 @@ export default function ValentinesProposal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            I have to ask you a serious question, be ready!
+            I gotta ask you a serious question, be ready!
           </motion.h2>
         )}
         {step === 2 && (
@@ -165,7 +209,8 @@ export default function ValentinesProposal() {
                 Yes, I will! 🥰
               </button>
               <button
-                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl hover:from-gray-600 hover:to-gray-700 transform hover:scale-95 transition-all duration-300 shadow-lg relative z-[100] select-none"
+                ref={noButtonRef}
+                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl transform transition-all duration-300 shadow-lg relative z-[100] select-none pointer-events-none"
                 style={
                   position
                     ? {
@@ -173,15 +218,20 @@ export default function ValentinesProposal() {
                         top: position.top,
                         left: position.left,
                         zIndex: 100,
+                        pointerEvents: "none",
+                        cursor: "not-allowed",
                       }
-                    : {}
+                    : {
+                        pointerEvents: "none",
+                        cursor: "not-allowed",
+                      }
                 }
-                onMouseEnter={() => setPosition(getRandomPosition())}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={(e) => {
                   e.preventDefault();
-                  setPosition(getRandomPosition());
+                  e.stopPropagation();
                 }}
+                disabled
               >
                 No, I won&apos;t 😢
               </button>
