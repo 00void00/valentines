@@ -103,7 +103,7 @@ export default function ValentinesProposal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            I have a surprise for you!
+            I have to ask you a serious question, be ready!
           </motion.h2>
         )}
         {step === 2 && (
@@ -143,21 +143,22 @@ export default function ValentinesProposal() {
                 className="opacity-100"
               />
             </div>
-            <div className="flex space-x-4 mt-10">
+            <div className="relative z-30 flex space-x-4 mt-10">
               <button
-                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl hover:from-pink-600 hover:to-rose-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl hover:from-pink-600 hover:to-rose-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl relative z-30"
                 onClick={handleYesClick}
               >
                 Yes, I will! 🥰
               </button>
               <button
-                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl hover:from-gray-600 hover:to-gray-700 transform hover:scale-95 transition-all duration-300 shadow-lg"
+                className="px-6 py-2 text-lg font-semibold text-white bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl hover:from-gray-600 hover:to-gray-700 transform hover:scale-95 transition-all duration-300 shadow-lg relative z-30"
                 style={
                   position
                     ? {
                         position: "absolute",
                         top: position.top,
                         left: position.left,
+                        zIndex: 50,
                       }
                     : {}
                 }
